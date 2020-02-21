@@ -58,6 +58,7 @@ class MovieLens:
         print('Statistics about self.R:')
         self.get_statistics()
 
+    # used here
     def _augment_R(self, mode):
         """
         mode == 'binary'
@@ -188,6 +189,7 @@ class MovieLens:
         arm_features = np.concatenate((user_features, item_features), axis=1)
         return arm_features
 
+    # used here
     def get_arm_feature_dim(self):
         return self.item_genres.shape[1] + self.R.shape[1]
 
@@ -230,6 +232,7 @@ class MovieLens:
         print("\nAfter shrinking:")
         self.get_statistics()
 
+    # used here
     def get_statistics(self):
         """
         Calculates various statistics about given matrix.
@@ -267,6 +270,7 @@ class MovieLens:
         print('Avg number of negative ratings per user: {} +- {}'.format(user_neg_rats_avg, user_neg_rats_std))
         return (user_pos_rats, user_neg_rats)
 
+    # used here
     def _maybe_download_and_extract(self):
         if self.variant not in VARIANTS:
             error(
@@ -291,8 +295,10 @@ class MovieLens:
         else:
             print("{} is already downloaded.".format(filepath))
 
+    # used here
     def _get_num_users_items(self):
         filepath = os.path.join(DATA_DIR, DATASET_NAME, self.variant, 'u.info')
+        print (f'Filepath is {filepath}')
         with open(filepath, encoding=ENCODING) as f:
             num_users = int(f.readline().split(' ')[0])
             num_items = int(f.readline().split(' ')[0])
@@ -300,6 +306,7 @@ class MovieLens:
 
         return num_users, num_items, num_ratings
 
+    # used here
     def _get_rating_matrix(self):
         r = np.zeros(shape=(self.num_users, self.num_items), dtype=float)
         implicit_ratings = np.zeros(shape=(self.num_ratings, 4), dtype=int)
@@ -322,6 +329,7 @@ class MovieLens:
         print("Created a rating matrix of shape={} and dtype={} from {}.".format(r.shape, r.dtype, filename))
         return r, implicit_ratings
 
+    # used here
     def _get_item_info(self):
         genres = np.zeros(shape=(self.num_items, self.num_genres), dtype=float)
         titles = np.empty(shape=(self.num_items,), dtype=object)
@@ -343,6 +351,7 @@ class MovieLens:
         print("Created a titles matrix of shape={} and dtype={} from {}.".format(titles.shape, titles.dtype, filename))
         return titles, genres
 
+    # used here
     def _get_genre_names(self):
         filename = 'u.genre'
         filepath = os.path.join(DATA_DIR, DATASET_NAME, self.variant, filename)
@@ -353,7 +362,7 @@ class MovieLens:
         return genres
 
 
-if __name__ == "__main__":
-    MovieLens(variant='ml-100k',
-                 pos_rating_threshold=4,
-                 data_augmentation_mode='binary_unknown')
+# if __name__ == "__main__":
+#     MovieLens(variant='ml-100k',
+#                  pos_rating_threshold=4,
+#                  data_augmentation_mode='binary_unknown')
