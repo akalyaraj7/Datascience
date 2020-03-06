@@ -104,6 +104,7 @@ class MovieLens:
         :param num_to_each_user: Number of random (positive=1 or negative=-1)ratings to be added to each user.
         :return: self.R with added ratings.
         """
+
         no_items = self.R.shape[1]
         no_users = self.R.shape[0]
         for u in range(no_users):
@@ -112,8 +113,8 @@ class MovieLens:
                                                                                     dtype=int)
             self.R[u][ids] = new_ratings
             # print('ids:', ids)
-            # print('ratings:', ratings)
-            # print('R[u]:', self.R[u])
+            #             # print('ratings:', ratings)
+            #             # print('R[u]:', self.R[u])
         return self.R
 
     def recommend(self, user_id, item_id, fixed_rewards=True, prob_reward_p=0.9):
@@ -125,17 +126,21 @@ class MovieLens:
         """
         MIN_PROBABILITY = 0# Minimal probability to like an item - adds stochasticity
 
+        # if the item choosen  has a positive rating already associated with it
         if self.R[user_id, item_id] == self.POSITIVE_RATING_VAL:
             if fixed_rewards:
                 return 1
             else:
                 return np.random.binomial(n=1, p=prob_reward_p)  # Bernoulli coin toss
+        # if the item choosen has a negative rating already associated with it
         elif self.R[user_id, item_id] == self.NEGATIVE_RATING_VAL:
             if fixed_rewards:
                 return 0
 
             else:
+                # bi- two possible distributions
                 return np.random.binomial(n=1, p=1-prob_reward_p)  # Bernoulli coin toss
+        # if there is no reward associated with the item, then you try find the rating
         else:
             item_genres = self.item_genres[item_id]
             user_ratings = self.R[user_id]
@@ -183,9 +188,11 @@ class MovieLens:
 
         t = t % self.num_users
         user_features = self.R[t]  # vector
+        # get only the user features of that specific user and repeat to the number of items
         user_features = np.tile(user_features, (self.num_items, 1))  # matrix where each row is R[t]
         item_features = self.item_genres  # matrix
         # arm_feature_dims = item_features.shape[1] + user_features.shape[0]
+        # concatenate item_featues and user_features
         arm_features = np.concatenate((user_features, item_features), axis=1)
         return arm_features
 

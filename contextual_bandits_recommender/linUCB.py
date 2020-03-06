@@ -5,7 +5,7 @@ from movielens import MovieLens
 
 
 class LinUCB:
-    def __init__(self, alpha, dataset=None, max_items=500, allow_selecting_known_arms=True, fixed_rewards=True,
+    def __init__(self, alpha, dataset=None, max_items=500, allow_selecting_known_arms=True,  fixed_rewards=True,
                  prob_reward_p=0.9):
         if dataset is None:
             self.dataset = MovieLens(variant='ml-100k',
@@ -14,19 +14,28 @@ class LinUCB:
         else:
             self.dataset = dataset
         self.dataset.shrink(max_items)
+        # TODO:Find out why randomn ratings are assigned
         self.dataset.add_random_ratings(num_to_each_user=3)
+        # TODO:What does alpha mean
         self.alpha = alpha
         self.fixed_rewards = fixed_rewards
+        # This probability for choosing the reward
         self.prob_reward_p = prob_reward_p
         self.users_with_unrated_items = np.array(range(self.dataset.num_users))
+        # select a random user among the available list of users
         self.monitored_user = np.random.choice(self.users_with_unrated_items)
         self.allow_selecting_known_arms = allow_selecting_known_arms
+        # Number of arms plus features (items+genres)
         self.d = self.dataset.arm_feature_dim
+
+        # create a matrix of items and (items + genres ) and initialze them to 0
         self.b = np.zeros(shape=(self.dataset.num_items, self.d))
 
         # More efficient way to create array of identity matrices of length num_items
         print("\nInitializing matrix A of shape {} which will require {}MB of memory."
               .format((self.dataset.num_items, self.d, self.d), 8 * self.dataset.num_items * self.d * self.d / 1e6))
+
+        # create an (item+genres) matrix and repeat them 100 times
         self.A = np.repeat(np.identity(self.d, dtype=float)[np.newaxis, :, :], self.dataset.num_items, axis=0)
         print("\nLinUCB successfully initialized.")
 
@@ -37,19 +46,25 @@ class LinUCB:
         :param unknown_item_ids: Indexes of items that user t has not rated yet.
         :return: Received reward for selected item = 1/0 = user liked/disliked item.
         """
+        # Context to be added here (context matrix)
         A = self.A
         b = self.b
+
+        # get the features for current arm
         arm_features = self.dataset.get_features_of_current_arms(t=t)
         p_t = np.zeros(shape=(arm_features.shape[0],), dtype=float)
         p_t -= 9999  # I never want to select the already rated items
         item_ids = unknown_item_ids
 
+        # if known arms can be selected,then pass the list of all the arms to the items_ids
         if self.allow_selecting_known_arms:
             item_ids = range(self.dataset.num_items)
             p_t += 9999
 
-        for a in item_ids:  # iterate over all arms
-            x_ta = arm_features[a].reshape(arm_features[a].shape[0], 1)  # make a column vector
+        # iterate over all the arms
+        for a in item_ids:
+            # make a column vector of the features of the arm
+            x_ta = arm_features[a].reshape(arm_features[a].shape[0], 1)
             A_a_inv = np.linalg.inv(A[a])
             theta_a = A_a_inv.dot(b[a])
             p_t[a] = theta_a.T.dot(x_ta) + self.alpha * np.sqrt(x_ta.T.dot(A_a_inv).dot(x_ta))
@@ -63,7 +78,7 @@ class LinUCB:
         max_idxs = np.argwhere(p_t == max_p_t).flatten()
         a_t = np.random.choice(max_idxs)  # idx of article to recommend to user t
 
-        # observed reward = 1/0
+        # observed reward = 1/0 - This step is to update reward
         r_t = self.dataset.recommend(user_id=t, item_id=a_t,
                                      fixed_rewards=self.fixed_rewards, prob_reward_p=self.prob_reward_p)
 
@@ -81,25 +96,33 @@ class LinUCB:
         Call choose_arm() for each user in the dataset.
         :return: Average received reward.
         """
+        # intitalize rewards to empty
         rewards = []
         start_time = time.time()
 
+        # iterate through all the users
         for i in range(self.dataset.num_users):
             start_time_i = time.time()
+            # get the user id of the next user
             user_id = self.dataset.get_next_user()
-            # user_id = 1
+            # user_id = 1 , check if the user hasn't rated any of the arms
             unknown_item_ids = self.dataset.get_uknown_items_of_user(user_id)
 
+            # if known arms cannot be selected
             if self.allow_selecting_known_arms == False:
                 if user_id not in self.users_with_unrated_items:
                     continue
 
+                # if the user id has all arms that is rated already
                 if unknown_item_ids.size == 0:
+                    #skip the user
                     print("User {} has no more unknown ratings, skipping him.".format(user_id))
+                    # Removing the user where there is no more unknown ratings
                     self.users_with_unrated_items = self.users_with_unrated_items[
                         self.users_with_unrated_items != user_id]
                     continue
 
+            # if known arms can be selected - choose the arm and append to reward
             rewards.append(self.choose_arm(user_id, unknown_item_ids, verbosity))
             time_i = time.time() - start_time_i
             if verbosity >= 2:
