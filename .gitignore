@@ -1,2 +1,4 @@
 .DS_Store
-.idea/
+.idea
+contextual_bandits_recommender/.idea
+contextual_bandits_recommender/__pycache__
