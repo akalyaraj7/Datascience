@@ -2,3 +2,5 @@
 .idea
 contextual_bandits_recommender/.idea
 contextual_bandits_recommender/__pycache__
+DQN/.ipynb_checkpoints
+DQN/.idea
